@@ -23,8 +23,6 @@ let azureFunctionHandler;
 let initError = null;
 
 try {
-    const createHandler = require("azure-function-express").createHandler;
-    const app = require("../server");
     azureFunctionHandler = createHandler(app);
 } catch (e) {
     console.error("Initialization failed:", e);
