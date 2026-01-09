@@ -6,14 +6,10 @@ const PORT = process.env.PORT || 3001;
 app.use(cors());
 app.use(express.json());
 
+const seeds = require('./data/seeds');
+
 // In-memory data store (In a real production scenario, this would be a database like PostgreSQL or MongoDB to ensure true statelessness)
-let inventory = [
-    { id: '1', brand: 'Apple', model: 'iPad Pro', category: 'Tablet', total_quantity: 20, available_quantity: 20 },
-    { id: '2', brand: 'Dell', model: 'XPS 15', category: 'Laptop', total_quantity: 10, available_quantity: 10 },
-    { id: '3', brand: 'Canon', model: 'EOS R5', category: 'Camera', total_quantity: 5, available_quantity: 5 },
-    { id: '4', brand: 'Sony', model: 'Alpha a7 III', category: 'Camera', total_quantity: 8, available_quantity: 8 },
-    { id: '5', brand: 'Apple', model: 'MacBook Air', category: 'Laptop', total_quantity: 15, available_quantity: 15 }
-];
+let inventory = [...seeds];
 
 // Health Check
 app.get('/health', (req, res) => {
@@ -65,6 +61,11 @@ app.patch('/devices/:id/inventory', (req, res) => {
     res.json(device);
 });
 
-app.listen(PORT, () => {
-    console.log(`Inventory Service running on port ${PORT}`);
-});
+// Only start server if not running in Azure Functions
+if (!process.env.AZURE_FUNCTIONS_WORKER_RUNTIME) {
+    app.listen(PORT, () => {
+        console.log(`Inventory Service running on port ${PORT}`);
+    });
+}
+
+module.exports = app;

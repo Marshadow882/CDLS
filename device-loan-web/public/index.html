@@ -3,51 +3,143 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Device Loan System</title>
+    <title>CDLS - Device Loan System</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        body { font-family: sans-serif; padding: 20px; max-width: 800px; margin: 0 auto; }
-        .card { border: 1px solid #ccc; padding: 15px; margin-bottom: 10px; border-radius: 5px; }
-        .btn { padding: 5px 10px; cursor: pointer; }
-        .btn-primary { background: #007bff; color: white; border: none; }
-        .btn-success { background: #28a745; color: white; border: none; }
-        .btn-warning { background: #ffc107; border: none; }
-        .hidden { display: none; }
-        #auth-section, #main-section { margin-bottom: 20px; }
-        header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; margin-bottom: 20px; }
+        body { background-color: #f8f9fa; }
+        .device-card { transition: transform 0.2s; height: 100%; }
+        .device-card:hover { transform: translateY(-5px); box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .device-img { height: 200px; object-fit: cover; background-color: #e9ecef; }
+        .status-badge { position: absolute; top: 10px; right: 10px; }
+        .nav-tabs .nav-link.active { font-weight: bold; border-bottom: 3px solid #0d6efd; }
     </style>
 </head>
 <body>
 
-<header>
-    <h1>Device Loan System</h1>
-    <div id="user-info" class="hidden">
-        Logged in as: <span id="username-display"></span> (<span id="role-display"></span>)
-        <button class="btn" onclick="logout()">Logout</button>
+<!-- Navbar -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
+    <div class="container">
+        <a class="navbar-brand" href="#"><i class="fas fa-laptop-code me-2"></i>CDLS</a>
+        <div class="d-flex align-items-center text-white" id="user-info-nav" style="display: none !important;">
+            <div class="me-3 text-end">
+                <div class="fw-bold" id="username-display">User</div>
+                <small class="text-secondary badge bg-light text-dark" id="role-display">Role</small>
+            </div>
+            <button class="btn btn-outline-light btn-sm" onclick="logout()">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </button>
+        </div>
     </div>
-</header>
+</nav>
 
-<div id="auth-section">
-    <h2>Login</h2>
-    <div class="card">
-        <label>Username: <input type="text" id="login-username" value="student1"></label>
-        <label>Role: 
-            <select id="login-role">
-                <option value="student">Student</option>
-                <option value="staff">Staff</option>
-            </select>
-        </label>
-        <button class="btn btn-primary" onclick="login()">Login</button>
+<div class="container">
+
+    <!-- Auth Section -->
+    <div id="auth-section" class="row justify-content-center mt-5">
+        <div class="col-md-6 col-lg-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white text-center py-4">
+                    <h4 class="mb-0">Welcome Back</h4>
+                    <p class="text-muted small mb-0">Sign in to manage device loans</p>
+                </div>
+                <div class="card-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label">Username</label>
+                        <input type="text" id="login-username" class="form-control" value="student1" placeholder="e.g. student1">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Role</label>
+                        <select id="login-role" class="form-select">
+                            <option value="student">Student</option>
+                            <option value="staff">Staff</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-primary w-100" onclick="login()">
+                        Sign In
+                    </button>
+                    <div class="mt-3 text-center">
+                        <small class="text-muted">Demo: Use any username. Password is skipped.</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Dashboard -->
+    <div id="main-section" class="d-none">
+        
+        <!-- Tabs Navigation -->
+        <ul class="nav nav-tabs mb-4" id="mainTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="devices-tab" data-bs-toggle="tab" data-bs-target="#devices-pane" type="button" role="tab">
+                    <i class="fas fa-boxes me-2"></i>Available Devices
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="reservations-tab" data-bs-toggle="tab" data-bs-target="#reservations-pane" type="button" role="tab">
+                    <i class="fas fa-clipboard-list me-2"></i>
+                    <span id="reservations-tab-label">My Bookings</span>
+                </button>
+            </li>
+        </ul>
+
+        <!-- Tabs Content -->
+        <div class="tab-content" id="mainTabsContent">
+            
+            <!-- Devices Tab -->
+            <div class="tab-pane fade show active" id="devices-pane" role="tabpanel">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="text-secondary">Inventory Catalog</h5>
+                    <button class="btn btn-sm btn-outline-primary" onclick="loadDevices()">
+                        <i class="fas fa-sync-alt"></i> Refresh
+                    </button>
+                </div>
+                <div id="device-list" class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+                    <!-- Devices injected here -->
+                    <div class="col text-center py-5"><div class="spinner-border text-primary"></div></div>
+                </div>
+            </div>
+
+            <!-- Reservations Tab -->
+            <div class="tab-pane fade" id="reservations-pane" role="tabpanel">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="text-secondary" id="reservations-title">Current Reservations</h5>
+                    <button class="btn btn-sm btn-outline-primary" onclick="fetchReservations()">
+                        <i class="fas fa-sync-alt"></i> Refresh
+                    </button>
+                </div>
+                <div class="card shadow-sm border-0">
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Device</th>
+                                        <th>User</th>
+                                        <th>Status</th>
+                                        <th>Return Due</th>
+                                        <th class="text-end">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="reservation-list">
+                                    <!-- Reservations injected here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </div>
 </div>
 
-<div id="main-section" class="hidden">
-    <h2>Available Devices</h2>
-    <div id="device-list">Loading...</div>
-
-    <h2>My Reservations / Actions</h2>
-    <button class="btn" onclick="fetchReservations()">Refresh Reservations</button>
-    <div id="reservation-list"></div>
-</div>
+<!-- Bootstrap Bundle JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
     let CONFIG = {};
@@ -55,13 +147,19 @@
     let CURRENT_USER = null;
 
     async function init() {
-        const res = await fetch('/config');
-        CONFIG = await res.json();
+        try {
+            const res = await fetch('config.json');
+            CONFIG = await res.json();
+        } catch (e) {
+            console.error("Failed to load config", e);
+        }
     }
 
     async function login() {
         const username = document.getElementById('login-username').value;
         const role = document.getElementById('login-role').value;
+
+        if (!username) return alert("Please enter a username");
 
         try {
             const res = await fetch(`${CONFIG.BOOKING_API}/auth/login`, {
@@ -74,11 +172,25 @@
             if (data.token) {
                 TOKEN = data.token;
                 CURRENT_USER = { username, role };
-                document.getElementById('auth-section').classList.add('hidden');
-                document.getElementById('main-section').classList.remove('hidden');
-                document.getElementById('user-info').classList.remove('hidden');
+                
+                // UI Switch
+                document.getElementById('auth-section').classList.add('d-none');
+                document.getElementById('main-section').classList.remove('d-none');
+                document.getElementById('user-info-nav').style.setProperty('display', 'flex', 'important');
+                
+                // Update User Info
                 document.getElementById('username-display').textContent = username;
-                document.getElementById('role-display').textContent = role;
+                document.getElementById('role-display').textContent = role.toUpperCase();
+                
+                // Update Tab Labels based on Role
+                if (role === 'staff') {
+                    document.getElementById('reservations-tab-label').textContent = 'All Reserved Devices';
+                    document.getElementById('reservations-title').textContent = 'All Active Reservations (Staff View)';
+                } else {
+                    document.getElementById('reservations-tab-label').textContent = 'My Bookings';
+                    document.getElementById('reservations-title').textContent = 'My Active Reservations';
+                }
+
                 loadDevices();
                 fetchReservations();
             }
@@ -90,36 +202,63 @@
     function logout() {
         TOKEN = null;
         CURRENT_USER = null;
-        document.getElementById('auth-section').classList.remove('hidden');
-        document.getElementById('main-section').classList.add('hidden');
-        document.getElementById('user-info').classList.add('hidden');
+        document.getElementById('auth-section').classList.remove('d-none');
+        document.getElementById('main-section').classList.add('d-none');
+        document.getElementById('user-info-nav').style.setProperty('display', 'none', 'important');
+        
+        // Reset Inputs
+        document.getElementById('login-username').value = 'student1';
+        document.getElementById('login-role').value = 'student';
     }
 
     async function loadDevices() {
         try {
-            // Frontend calls Inventory Service directly for reading (Read-Only Interface)
             const res = await fetch(`${CONFIG.INVENTORY_API}/devices`);
             const devices = await res.json();
             
             const container = document.getElementById('device-list');
             container.innerHTML = '';
             
+            if (devices.length === 0) {
+                container.innerHTML = '<div class="col-12 text-center text-muted">No devices found.</div>';
+                return;
+            }
+
             devices.forEach(d => {
+                const isAvailable = d.available_quantity > 0;
+                const imageSrc = d.image || 'https://via.placeholder.com/300x200?text=No+Image';
+                
                 const div = document.createElement('div');
-                div.className = 'card';
+                div.className = 'col';
                 div.innerHTML = `
-                    <strong>${d.brand} ${d.model}</strong> (${d.category})<br>
-                    Available: ${d.available_quantity} / ${d.total_quantity}
-                    <br><br>
-                    <button class="btn btn-success" onclick="reserve('${d.id}')" ${d.available_quantity === 0 ? 'disabled' : ''}>
-                        Reserve (2 Days)
-                    </button>
+                    <div class="card device-card h-100 border-0 shadow-sm">
+                        <div class="position-relative">
+                            <img src="${imageSrc}" class="card-img-top device-img" alt="${d.model}">
+                            <span class="badge ${isAvailable ? 'bg-success' : 'bg-danger'} status-badge">
+                                ${d.available_quantity} / ${d.total_quantity} Available
+                            </span>
+                        </div>
+                        <div class="card-body d-flex flex-column">
+                            <div class="mb-2">
+                                <span class="badge bg-light text-secondary border">${d.category}</span>
+                                <span class="badge bg-light text-secondary border">${d.brand}</span>
+                            </div>
+                            <h5 class="card-title">${d.model}</h5>
+                            <div class="mt-auto pt-3">
+                                <button class="btn ${isAvailable ? 'btn-primary' : 'btn-secondary'} w-100" 
+                                        onclick="reserve('${d.id}')" 
+                                        ${!isAvailable ? 'disabled' : ''}>
+                                    ${isAvailable ? '<i class="fas fa-plus-circle me-1"></i> Reserve (2 Days)' : 'Out of Stock'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 `;
                 container.appendChild(div);
             });
         } catch (e) {
             console.error(e);
-            document.getElementById('device-list').innerHTML = 'Error loading devices';
+            document.getElementById('device-list').innerHTML = '<div class="alert alert-danger">Error loading devices</div>';
         }
     }
 
@@ -127,7 +266,6 @@
         if (!confirm('Confirm reservation for 2 days?')) return;
 
         try {
-            // Frontend calls Booking Service for write operations
             const res = await fetch(`${CONFIG.BOOKING_API}/reservations`, {
                 method: 'POST',
                 headers: { 
@@ -139,9 +277,14 @@
 
             const data = await res.json();
             if (res.ok) {
+                // Show toast or alert
                 alert('Success: ' + data.info);
                 loadDevices(); // Refresh inventory
                 fetchReservations(); // Refresh list
+                
+                // Switch to reservations tab to show the new booking
+                const triggerEl = document.querySelector('#reservations-tab');
+                bootstrap.Tab.getInstance(triggerEl).show();
             } else {
                 alert('Error: ' + data.error);
             }
@@ -160,41 +303,67 @@
             const container = document.getElementById('reservation-list');
             container.innerHTML = '';
 
+            if (reservations.length === 0) {
+                container.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">No active reservations found.</td></tr>';
+                return;
+            }
+
             reservations.forEach(r => {
-                const div = document.createElement('div');
-                div.className = 'card';
-                
+                let statusBadge = '';
+                switch(r.status) {
+                    case 'reserved': statusBadge = '<span class="badge bg-warning text-dark">Reserved</span>'; break;
+                    case 'collected': statusBadge = '<span class="badge bg-primary">Collected</span>'; break;
+                    case 'returned': statusBadge = '<span class="badge bg-success">Returned</span>'; break;
+                    default: statusBadge = `<span class="badge bg-secondary">${r.status}</span>`;
+                }
+
                 let actions = '';
                 // Staff only actions
                 if (CURRENT_USER.role === 'staff') {
                     if (r.status === 'reserved') {
-                        actions += `<button class="btn btn-warning" onclick="collect('${r.id}')">Mark Collected</button> `;
+                        actions += `<button class="btn btn-sm btn-outline-warning me-1" onclick="collect('${r.id}')" title="Mark Collected"><i class="fas fa-hand-holding"></i> Collect</button>`;
                     }
                     if (r.status === 'collected') {
-                        actions += `<button class="btn btn-primary" onclick="returnDevice('${r.id}')">Mark Returned</button>`;
+                        actions += `<button class="btn btn-sm btn-outline-success" onclick="returnDevice('${r.id}')" title="Mark Returned"><i class="fas fa-check"></i> Return</button>`;
                     }
+                } else {
+                    actions = '<span class="text-muted small">No actions</span>';
                 }
 
-                div.innerHTML = `
-                    <strong>Reservation ID:</strong> ${r.id} <br>
-                    <strong>Device:</strong> ${r.deviceName} <br>
-                    <strong>User:</strong> ${r.userId} (${r.userRole}) <br>
-                    <strong>Status:</strong> ${r.status.toUpperCase()} <br>
-                    <strong>Return Due:</strong> ${new Date(r.returnDate).toLocaleDateString()} <br>
-                    ${actions}
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><code>${r.id.substring(r.id.length - 6)}</code></td>
+                    <td class="fw-bold">${r.deviceName}</td>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <div class="avatar-placeholder bg-light rounded-circle text-center me-2" style="width:30px;height:30px;line-height:30px">
+                                <i class="fas fa-user text-secondary"></i>
+                            </div>
+                            <div>
+                                <div>${r.userId}</div>
+                                <div class="small text-muted" style="font-size:0.75rem">${r.userRole}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td>${statusBadge}</td>
+                    <td>${new Date(r.returnDate).toLocaleDateString()}</td>
+                    <td class="text-end">${actions}</td>
                 `;
-                container.appendChild(div);
+                container.appendChild(tr);
             });
         } catch (e) {
             console.error(e);
+            document.getElementById('reservation-list').innerHTML = '<tr><td colspan="6" class="text-danger text-center">Error loading reservations</td></tr>';
         }
     }
 
     async function collect(id) {
+        if (!confirm('Mark device as COLLECTED?')) return;
         await performAction(`${CONFIG.BOOKING_API}/reservations/${id}/collect`);
     }
 
     async function returnDevice(id) {
+        if (!confirm('Mark device as RETURNED?')) return;
         await performAction(`${CONFIG.BOOKING_API}/reservations/${id}/return`);
     }
 
@@ -206,7 +375,7 @@
             });
             const data = await res.json();
             if (res.ok) {
-                alert(data.message);
+                // alert(data.message);
                 loadDevices();
                 fetchReservations();
             } else {

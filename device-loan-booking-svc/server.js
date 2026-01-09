@@ -160,6 +160,11 @@ app.get('/reservations', authenticate, (req, res) => {
     }
 });
 
-app.listen(PORT, () => {
-    console.log(`Booking Service running on port ${PORT}`);
-});
+// Only start server if not running in Azure Functions
+if (!process.env.AZURE_FUNCTIONS_WORKER_RUNTIME) {
+    app.listen(PORT, () => {
+        console.log(`Booking Service running on port ${PORT}`);
+    });
+}
+
+module.exports = app;

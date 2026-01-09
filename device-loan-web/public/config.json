@@ -1,0 +1,4 @@
+{
+    "INVENTORY_API": "http://deviceloan-inventory-svc-exaxebe6htghgmfm.norwayeast-01.azurewebsites.net",
+    "BOOKING_API": "http://deviceloan-booking-svc-cdb7d6a2g0eya4bq.norwayeast-01.azurewebsites.net"
+}
