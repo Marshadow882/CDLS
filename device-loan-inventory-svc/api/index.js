@@ -19,20 +19,46 @@ try {
 }
 
 // Wrapper for Azure Functions to handle Express app
-const azureFunctionHandler = createHandler(app);
+let azureFunctionHandler;
+let initError = null;
 
-module.exports = async function (context, req) {
-    try {
-        await azureFunctionHandler(context, req);
-    } catch (error) {
-        context.log.error("Unhandled Error in Azure Function:", error);
+try {
+    const createHandler = require("azure-function-express").createHandler;
+    const app = require("../server");
+    azureFunctionHandler = createHandler(app);
+} catch (e) {
+    console.error("Initialization failed:", e);
+    initError = e;
+}
+
+module.exports = function (context, req) {
+    if (initError) {
+        context.log.error("Function failed to initialize:", initError);
         context.res = {
             status: 500,
             body: JSON.stringify({
-                error: "Internal Server Error",
+                error: "Function Initialization Error",
+                message: initError.message || String(initError)
+            }),
+            headers: { "Content-Type": "application/json" }
+        };
+        context.done();
+        return;
+    }
+
+    try {
+        // azure-function-express uses context.done() internally
+        azureFunctionHandler(context, req);
+    } catch (error) {
+        context.log.error("Unhandled Runtime Error:", error);
+        context.res = {
+            status: 500,
+            body: JSON.stringify({
+                error: "Internal Runtime Error",
                 message: error.message || String(error)
             }),
             headers: { "Content-Type": "application/json" }
         };
+        context.done();
     }
 };
