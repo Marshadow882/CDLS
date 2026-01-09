@@ -59,7 +59,9 @@ app.post('/auth/login', (req, res) => {
         res.json({ token });
     } catch (err) {
         console.error("Login failed", err);
-        res.status(500).json({ error: "login_failed", message: String(err?.message || err) });
+        res.status(500)
+           .header("Access-Control-Allow-Origin", "*")
+           .json({ error: "auth_login_failed", message: String(err?.message || err) });
     }
 });
 
