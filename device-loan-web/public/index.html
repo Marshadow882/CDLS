@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Device Loan System</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; max-width: 800px; margin: 0 auto; }
+        .card { border: 1px solid #ccc; padding: 15px; margin-bottom: 10px; border-radius: 5px; }
+        .btn { padding: 5px 10px; cursor: pointer; }
+        .btn-primary { background: #007bff; color: white; border: none; }
+        .btn-success { background: #28a745; color: white; border: none; }
+        .btn-warning { background: #ffc107; border: none; }
+        .hidden { display: none; }
+        #auth-section, #main-section { margin-bottom: 20px; }
+        header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Device Loan System</h1>
+    <div id="user-info" class="hidden">
+        Logged in as: <span id="username-display"></span> (<span id="role-display"></span>)
+        <button class="btn" onclick="logout()">Logout</button>
+    </div>
+</header>
+
+<div id="auth-section">
+    <h2>Login</h2>
+    <div class="card">
+        <label>Username: <input type="text" id="login-username" value="student1"></label>
+        <label>Role: 
+            <select id="login-role">
+                <option value="student">Student</option>
+                <option value="staff">Staff</option>
+            </select>
+        </label>
+        <button class="btn btn-primary" onclick="login()">Login</button>
+    </div>
+</div>
+
+<div id="main-section" class="hidden">
+    <h2>Available Devices</h2>
+    <div id="device-list">Loading...</div>
+
+    <h2>My Reservations / Actions</h2>
+    <button class="btn" onclick="fetchReservations()">Refresh Reservations</button>
+    <div id="reservation-list"></div>
+</div>
+
+<script>
+    let CONFIG = {};
+    let TOKEN = null;
+    let CURRENT_USER = null;
+
+    async function init() {
+        const res = await fetch('/config');
+        CONFIG = await res.json();
+    }
+
+    async function login() {
+        const username = document.getElementById('login-username').value;
+        const role = document.getElementById('login-role').value;
+
+        try {
+            const res = await fetch(`${CONFIG.BOOKING_API}/auth/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, role })
+            });
+            const data = await res.json();
+            
+            if (data.token) {
+                TOKEN = data.token;
+                CURRENT_USER = { username, role };
+                document.getElementById('auth-section').classList.add('hidden');
+                document.getElementById('main-section').classList.remove('hidden');
+                document.getElementById('user-info').classList.remove('hidden');
+                document.getElementById('username-display').textContent = username;
+                document.getElementById('role-display').textContent = role;
+                loadDevices();
+                fetchReservations();
+            }
+        } catch (e) {
+            alert('Login failed: ' + e.message);
+        }
+    }
+
+    function logout() {
+        TOKEN = null;
+        CURRENT_USER = null;
+        document.getElementById('auth-section').classList.remove('hidden');
+        document.getElementById('main-section').classList.add('hidden');
+        document.getElementById('user-info').classList.add('hidden');
+    }
+
+    async function loadDevices() {
+        try {
+            // Frontend calls Inventory Service directly for reading (Read-Only Interface)
+            const res = await fetch(`${CONFIG.INVENTORY_API}/devices`);
+            const devices = await res.json();
+            
+            const container = document.getElementById('device-list');
+            container.innerHTML = '';
+            
+            devices.forEach(d => {
+                const div = document.createElement('div');
+                div.className = 'card';
+                div.innerHTML = `
+                    <strong>${d.brand} ${d.model}</strong> (${d.category})<br>
+                    Available: ${d.available_quantity} / ${d.total_quantity}
+                    <br><br>
+                    <button class="btn btn-success" onclick="reserve('${d.id}')" ${d.available_quantity === 0 ? 'disabled' : ''}>
+                        Reserve (2 Days)
+                    </button>
+                `;
+                container.appendChild(div);
+            });
+        } catch (e) {
+            console.error(e);
+            document.getElementById('device-list').innerHTML = 'Error loading devices';
+        }
+    }
+
+    async function reserve(deviceId) {
+        if (!confirm('Confirm reservation for 2 days?')) return;
+
+        try {
+            // Frontend calls Booking Service for write operations
+            const res = await fetch(`${CONFIG.BOOKING_API}/reservations`, {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${TOKEN}`
+                },
+                body: JSON.stringify({ deviceId, quantity: 1 })
+            });
+
+            const data = await res.json();
+            if (res.ok) {
+                alert('Success: ' + data.info);
+                loadDevices(); // Refresh inventory
+                fetchReservations(); // Refresh list
+            } else {
+                alert('Error: ' + data.error);
+            }
+        } catch (e) {
+            alert('Reservation failed');
+        }
+    }
+
+    async function fetchReservations() {
+        try {
+            const res = await fetch(`${CONFIG.BOOKING_API}/reservations`, {
+                headers: { 'Authorization': `Bearer ${TOKEN}` }
+            });
+            const reservations = await res.json();
+
+            const container = document.getElementById('reservation-list');
+            container.innerHTML = '';
+
+            reservations.forEach(r => {
+                const div = document.createElement('div');
+                div.className = 'card';
+                
+                let actions = '';
+                // Staff only actions
+                if (CURRENT_USER.role === 'staff') {
+                    if (r.status === 'reserved') {
+                        actions += `<button class="btn btn-warning" onclick="collect('${r.id}')">Mark Collected</button> `;
+                    }
+                    if (r.status === 'collected') {
+                        actions += `<button class="btn btn-primary" onclick="returnDevice('${r.id}')">Mark Returned</button>`;
+                    }
+                }
+
+                div.innerHTML = `
+                    <strong>Reservation ID:</strong> ${r.id} <br>
+                    <strong>Device:</strong> ${r.deviceName} <br>
+                    <strong>User:</strong> ${r.userId} (${r.userRole}) <br>
+                    <strong>Status:</strong> ${r.status.toUpperCase()} <br>
+                    <strong>Return Due:</strong> ${new Date(r.returnDate).toLocaleDateString()} <br>
+                    ${actions}
+                `;
+                container.appendChild(div);
+            });
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
+    async function collect(id) {
+        await performAction(`${CONFIG.BOOKING_API}/reservations/${id}/collect`);
+    }
+
+    async function returnDevice(id) {
+        await performAction(`${CONFIG.BOOKING_API}/reservations/${id}/return`);
+    }
+
+    async function performAction(url) {
+        try {
+            const res = await fetch(url, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${TOKEN}` }
+            });
+            const data = await res.json();
+            if (res.ok) {
+                alert(data.message);
+                loadDevices();
+                fetchReservations();
+            } else {
+                alert(data.error);
+            }
+        } catch (e) {
+            alert('Action failed');
+        }
+    }
+
+    init();
+</script>
+
+</body>
+</html>

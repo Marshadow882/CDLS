@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  inventory-svc:
+    build: ./device-loan-inventory-svc
+    container_name: device-loan-inventory
+    ports:
+      - "3001:3001"
+    environment:
+      - PORT=3001
+    networks:
+      - loan-net
+
+  booking-svc:
+    build: ./device-loan-booking-svc
+    container_name: device-loan-booking
+    ports:
+      - "3002:3002"
+    environment:
+      - PORT=3002
+      - INVENTORY_SERVICE_URL=http://inventory-svc:3001
+      - JWT_SECRET=dev-secret
+    depends_on:
+      - inventory-svc
+    networks:
+      - loan-net
+
+  web-svc:
+    build: ./device-loan-web
+    container_name: device-loan-web
+    ports:
+      - "8080:8080"
+    environment:
+      - PORT=8080
+      # These are used by the browser, so they point to localhost mapped ports
+      - INVENTORY_API=http://localhost:3001
+      - BOOKING_API=http://localhost:3002
+    depends_on:
+      - booking-svc
+    networks:
+      - loan-net
+
+networks:
+  loan-net:
+    driver: bridge
