@@ -1,29 +1,12 @@
 console.log("Loading api/index.js...");
 
-let createHandler;
-try {
-    // Correct way to import azure-function-express
-    createHandler = require("azure-function-express");
-    console.log("Loaded azure-function-express");
-} catch (e) {
-    console.error("ERROR: Failed to load azure-function-express", e);
-    throw e;
-}
-
-let app;
-try {
-    app = require("../server");
-    console.log("Loaded ../server");
-} catch (e) {
-    console.error("ERROR: Failed to load ../server", e);
-    throw e;
-}
-
 // Wrapper for Azure Functions to handle Express app
 let azureFunctionHandler;
 let initError = null;
 
 try {
+    const createHandler = require("azure-function-express");
+    const app = require("../server");
     azureFunctionHandler = createHandler(app);
 } catch (e) {
     console.error("Initialization failed:", e);

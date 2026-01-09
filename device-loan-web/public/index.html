@@ -147,7 +147,7 @@
     let CURRENT_USER = null;
 
     // Robust fetch wrapper
-    async function safeFetch(url, options = {}) {
+    async function requestJson(url, options = {}) {
         try {
             const res = await fetch(url, options);
             const text = await res.text();
@@ -188,7 +188,7 @@
         if (!username) return alert("Please enter a username");
 
         try {
-            const data = await safeFetch(`${CONFIG.BOOKING_API}/auth/login`, {
+            const data = await requestJson(`${CONFIG.BOOKING_API}/auth/login`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ username, role })
