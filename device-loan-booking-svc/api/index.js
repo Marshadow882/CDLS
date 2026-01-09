@@ -39,7 +39,10 @@ module.exports = function (context, req) {
                 error: "Function Initialization Error",
                 message: initError.message || String(initError)
             }),
-            headers: { "Content-Type": "application/json" }
+            headers: { 
+                "Content-Type": "application/json",
+                "Access-Control-Allow-Origin": "*" 
+            }
         };
         context.done();
         return;
@@ -56,7 +59,10 @@ module.exports = function (context, req) {
                 error: "Internal Runtime Error",
                 message: error.message || String(error)
             }),
-            headers: { "Content-Type": "application/json" }
+            headers: { 
+                "Content-Type": "application/json",
+                "Access-Control-Allow-Origin": "*"
+            }
         };
         context.done();
     }
