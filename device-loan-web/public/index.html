@@ -146,6 +146,32 @@
     let TOKEN = null;
     let CURRENT_USER = null;
 
+    // Robust fetch wrapper
+    async function safeFetch(url, options = {}) {
+        try {
+            const res = await fetch(url, options);
+            const text = await res.text();
+
+            if (!res.ok) {
+                // Try to parse JSON error from backend if possible
+                let errorMessage = text || "(empty response)";
+                try {
+                    const errorJson = JSON.parse(text);
+                    if (errorJson.error) errorMessage = errorJson.error;
+                    else if (errorJson.message) errorMessage = errorJson.message;
+                } catch (e) {
+                    // ignore
+                }
+                throw new Error(`HTTP ${res.status}: ${errorMessage}`);
+            }
+
+            return text ? JSON.parse(text) : null;
+        } catch (e) {
+            console.error("Fetch failed:", e);
+            throw e;
+        }
+    }
+
     async function init() {
         try {
             const res = await fetch('config.json');
@@ -162,12 +188,11 @@
         if (!username) return alert("Please enter a username");
 
         try {
-            const res = await fetch(`${CONFIG.BOOKING_API}/auth/login`, {
+            const data = await safeFetch(`${CONFIG.BOOKING_API}/auth/login`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ username, role })
             });
-            const data = await res.json();
             
             if (data.token) {
                 TOKEN = data.token;
@@ -213,8 +238,7 @@
 
     async function loadDevices() {
         try {
-            const res = await fetch(`${CONFIG.INVENTORY_API}/devices`);
-            const devices = await res.json();
+            const devices = await safeFetch(`${CONFIG.INVENTORY_API}/devices`);
             
             const container = document.getElementById('device-list');
             container.innerHTML = '';
@@ -266,7 +290,7 @@
         if (!confirm('Confirm reservation for 2 days?')) return;
 
         try {
-            const res = await fetch(`${CONFIG.BOOKING_API}/reservations`, {
+            const data = await safeFetch(`${CONFIG.BOOKING_API}/reservations`, {
                 method: 'POST',
                 headers: { 
                     'Content-Type': 'application/json',
@@ -275,30 +299,26 @@
                 body: JSON.stringify({ deviceId, quantity: 1 })
             });
 
-            const data = await res.json();
-            if (res.ok) {
-                // Show toast or alert
-                alert('Success: ' + data.info);
-                loadDevices(); // Refresh inventory
-                fetchReservations(); // Refresh list
-                
-                // Switch to reservations tab to show the new booking
-                const triggerEl = document.querySelector('#reservations-tab');
-                bootstrap.Tab.getInstance(triggerEl).show();
-            } else {
-                alert('Error: ' + data.error);
-            }
+            // If we get here, it's a success
+            // Show toast or alert
+            alert('Success: ' + (data.info || 'Reserved'));
+            loadDevices(); // Refresh inventory
+            fetchReservations(); // Refresh list
+            
+            // Switch to reservations tab to show the new booking
+            const triggerEl = document.querySelector('#reservations-tab');
+            bootstrap.Tab.getInstance(triggerEl).show();
+
         } catch (e) {
-            alert('Reservation failed');
+            alert('Reservation failed: ' + e.message);
         }
     }
 
     async function fetchReservations() {
         try {
-            const res = await fetch(`${CONFIG.BOOKING_API}/reservations`, {
+            const reservations = await safeFetch(`${CONFIG.BOOKING_API}/reservations`, {
                 headers: { 'Authorization': `Bearer ${TOKEN}` }
             });
-            const reservations = await res.json();
 
             const container = document.getElementById('reservation-list');
             container.innerHTML = '';
@@ -369,20 +389,16 @@
 
     async function performAction(url) {
         try {
-            const res = await fetch(url, {
+            const data = await safeFetch(url, {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${TOKEN}` }
             });
-            const data = await res.json();
-            if (res.ok) {
-                // alert(data.message);
-                loadDevices();
-                fetchReservations();
-            } else {
-                alert(data.error);
-            }
+            
+            // alert(data.message);
+            loadDevices();
+            fetchReservations();
         } catch (e) {
-            alert('Action failed');
+            alert('Action failed: ' + e.message);
         }
     }
 

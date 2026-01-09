@@ -19,4 +19,20 @@ try {
 }
 
 // Wrapper for Azure Functions to handle Express app
-module.exports = createHandler(app);
+const azureFunctionHandler = createHandler(app);
+
+module.exports = async function (context, req) {
+    try {
+        await azureFunctionHandler(context, req);
+    } catch (error) {
+        context.log.error("Unhandled Error in Azure Function:", error);
+        context.res = {
+            status: 500,
+            body: JSON.stringify({
+                error: "Internal Server Error",
+                message: error.message || String(error)
+            }),
+            headers: { "Content-Type": "application/json" }
+        };
+    }
+};
