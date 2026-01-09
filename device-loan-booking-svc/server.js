@@ -50,12 +50,17 @@ app.get('/health', (req, res) => {
 
 // Helper endpoint to generate tokens for testing (Not strictly asked but necessary for "demo")
 app.post('/auth/login', (req, res) => {
-    const { username, role } = req.body; // e.g., 'student' or 'staff'
-    if (!['student', 'staff'].includes(role)) {
-        return res.status(400).json({ error: 'Invalid role. Use "student" or "staff".' });
+    try {
+        const { username, role } = req.body; // e.g., 'student' or 'staff'
+        if (!['student', 'staff'].includes(role)) {
+            return res.status(400).json({ error: 'Invalid role. Use "student" or "staff".' });
+        }
+        const token = jwt.sign({ username, role }, JWT_SECRET, { expiresIn: '1h' });
+        res.json({ token });
+    } catch (err) {
+        console.error("Login failed", err);
+        res.status(500).json({ error: "login_failed", message: String(err?.message || err) });
     }
-    const token = jwt.sign({ username, role }, JWT_SECRET, { expiresIn: '1h' });
-    res.json({ token });
 });
 
 // 1. Create Reservation (Any authenticated user)
