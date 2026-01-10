@@ -20,7 +20,8 @@ module.exports = function (context, req) {
             status: 500,
             body: JSON.stringify({
                 error: "Function Initialization Error",
-                message: initError.message || String(initError)
+                message: initError.message || String(initError),
+                stack: initError.stack
             }),
             headers: { 
                 "Content-Type": "application/json",
@@ -40,7 +41,8 @@ module.exports = function (context, req) {
             status: 500,
             body: JSON.stringify({
                 error: "Internal Runtime Error",
-                message: error.message || String(error)
+                message: error.message || String(error),
+                stack: error.stack
             }),
             headers: { 
                 "Content-Type": "application/json",
