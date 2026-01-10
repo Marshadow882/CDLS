@@ -5,10 +5,15 @@ let azureFunctionHandler;
 let initError = null;
 
 try {
-    const createHandler = require("azure-function-express");
-    const app = require("../server");
-    azureFunctionHandler = createHandler(app);
-} catch (e) {
+        // Robust import for both v1.x and v2.x of azure-function-express
+        const pkg = require("azure-function-express");
+        const createHandler = typeof pkg === 'function' ? pkg : pkg.createHandler;
+        
+        console.log("Loaded azure-function-express (Type: " + typeof pkg + ")");
+
+        const app = require("../server");
+        azureFunctionHandler = createHandler(app);
+    } catch (e) {
     console.error("Initialization failed:", e);
     initError = e;
 }
