@@ -104,13 +104,14 @@ Each piece of evidence is briefly described in `Media/evidence-notes.md`.
 
 ## 9. Project Structure
 
-/
-├── Media/
-├── Source/
-│ ├── frontend/
-│ ├── device-service/
-│ └── loan-service/
-├── Documentation/
+├── .git/ # Git repository metadata
+├── .github/ # GitHub Actions workflows and configuration
+├── device-loan-booking-svc/ # Backend service for device reservations and loan management
+├── device-loan-inventory-svc/ # Backend service for device inventory and availability
+├── device-loan-web/ # Frontend web application
+├── .gitignore
+├── docker-compose.yml # Local development and service composition
+├── package-lock.json
 └── README.md
 
 Build artifacts and generated files have been removed prior to submission.
